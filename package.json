@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "dependencies": {
     "alexa-sdk": "^1.0.11",
-    "moment": "^2.18.1"
+    "moment": "^2.30.1"
   },
   "scripts": {
     "test": "jest"

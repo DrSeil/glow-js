@@ -1,0 +1,340 @@
+
+// main.js
+var buttonManager = require("buttons");
+var http = require("http");
+var url = "YOUR_URL_HERE";
+var loginToken = "";
+
+
+function fetchLoginToken(callback) {
+    var options = {
+      url: 'https://baby.glowing.com/android/user/sign_in',
+      method: 'POST',
+			content: JSON.stringify({email: "drseil@royston.com", password: "Fl1c Buttons"})
+    };
+	console.log("making request")
+http.makeRequest(options, function(err,response){
+	console.log("finished request")
+	console.log(JSON.stringify(response))
+      
+        callback(JSON.parse(response.content));
+      
+    });
+	console.log("after request")
+  }
+
+function getLoginToken(callback) {
+    if (loginToken) {
+      callback(loginToken);
+      return;
+    }
+
+    fetchLoginToken(
+      function(response){
+        loginToken = response.data.user.encrypted_token;
+        callback(loginToken);
+      }
+    );
+  }
+
+function  pushData(send_val) {
+
+    getLoginToken(function(login_token) {
+      pushBabyData(
+        login_token,send_val)
+    });
+  }
+
+  fetchSyncData(login_token, baby_sync_token, user_sync_token, baby_id, callback) {
+    // Stuff I copied from the Android app
+    var headers = {
+        'GlowOccurTime':  current_time,
+        'Request-Id': generateRandomHexString() + '-' + current_time,
+        'Authorization': login_token,
+        'Content-Type': 'application/json; charset=utf-8',
+        'Host': 'baby.glowing.com',
+        'User-Agent': 'okhttp/3.4.1'
+      };
+
+    var babies = [];
+    var user = {};
+    if (baby_id && baby_sync_token) {
+      babies = [{sync_token: baby_sync_token, baby_id: baby_id}];
+    }
+
+    if (user_sync_token) {
+      user.sync_token = user_sync_token;
+    }
+
+    var dataString = JSON.stringify({
+      data: {
+        babies: babies,
+        user: user
+      }
+    });
+
+    var options = {
+      path: 'https://baby.glowing.com/android/user/pull?hl=en_US&random=7645523890115&device_id=79906fb6942e9c92&android_version=1.7.4&vc=10704&tz=America/New_York&code_name=noah',
+      host: 'baby.glowing.com',
+      method: 'POST',
+      headers: headers,
+    };
+
+    var req = https.request(options, function(response) {
+      var body = '';
+      response.on('data', function(d) {
+          body += d;
+      });
+      response.on('end', function() {
+        console.log(body);
+
+        callback(body);
+      });
+      response.on('error', function() {
+        console.log('errrrrr');
+      });
+    });
+
+    req.write(dataString);
+    req.on('error', function(e) {
+      console.log(e);
+    });
+    req.end();
+
+  }
+
+
+function guid() {
+    function _p8(s) {
+        var p = (Math.random().toString(16)+"000000000").substr(2,8);
+        return s ? "-" + p.substr(0,4) + "-" + p.substr(4,4) : p ;
+    }
+    return _p8() + _p8(true) + _p8(true) + _p8();
+}
+
+function generateRandomHexString() {
+  const hexChars = '0123456789abcdef';
+  var hexString = '';
+
+  // Generate 16 random hex digits
+  for (var i = 0; i < 16; i++) {
+    const randomIndex = Math.floor(Math.random() * 16); // Random index between 0-15
+    hexString += hexChars.charAt(randomIndex);
+  }
+
+  return hexString;
+}
+
+function pushBabyData(login_token, dataString) {
+    var current_time = Date.now();
+    var headers = {
+      'GlowOccurTime':  current_time,
+      'Request-Id': generateRandomHexString() + '-' + current_time,
+      'Authorization': login_token,
+      'Content-Type': 'application/json; charset=utf-8',
+      'Host': 'baby.glowing.com',
+      'User-Agent': 'okhttp/3.4.1'
+    };
+    console.log(JSON.stringify(headers));
+//72057594060131384
+//
+
+
+
+
+
+  
+
+    
+
+    
+    const baseUrl = 'https://baby.glowing.com/android/user/push';
+ 
+	  const currentTime = Date.now();
+    const finalUrl = baseUrl+'?random='+currentTime+'&android_version=4.44.1'
+
+    var options = {
+      url: finalUrl,
+      method: 'PATCH',
+      headers: headers,
+			content: dataString,
+    };  
+    console.log(JSON.stringify(options));
+    console.log(JSON.stringify(dataString))
+
+
+    http.makeRequest(options, function(err,response) {
+      console.log("error is " + JSON.stringify(err))
+			console.log("response is " + JSON.stringify(response))
+    });
+	console.log("request sent")
+
+
+
+  }
+
+/*
+function pushData(value){
+	var dataString = JSON.stringify({value:value})
+	
+	 var options = {
+      url: "http://192.168.86.45:3000",
+      method: 'post',
+			content: dataString,
+    };  
+    console.log(JSON.stringify(options));
+    console.log(JSON.stringify(dataString))
+
+
+    http.makeRequest(options, function(err,response) {
+      console.log("error is " + JSON.stringify(err))
+			console.log("response is " + JSON.stringify(response))
+    });
+}
+*/
+
+
+//{"baby_id":3116373,"action_user_id":72057594060131384,"uuid":"2bcfef4a-cc19-4cfb-b5a0-df0889c7ff2a","date_label":"2024/04/09","start_time_label":"2024/04/09 17:43:00","start_timestamp":1712709780,"pump_left_volume_ml":-1,"pump_right_volume_ml":-1,"feed_type":6,"notes":""}]
+
+    
+
+
+buttonManager.on("buttonSingleOrDoubleClickOrHold", function(obj) {
+	var button = buttonManager.getButton(obj.bdaddr);
+	console.log(JSON.stringify(obj))
+	console.log(JSON.stringify(button))
+	const today = new Date();
+console.log(today)
+const year = today.getFullYear();
+const month = today.getMonth() + 1; // Get month (0-indexed)
+const day = today.getDate();
+const hours = today.getHours();
+const minutes = today.getMinutes();
+const seconds = today.getSeconds();
+	
+	
+// Adjust hours and day based on DST
+
+  hours -= 7; // Subtract 7 hours for DST
+
+
+// Handle negative hours and day overflow
+if (hours < 0) {
+  hours += 24;
+  day -= 1;
+}
+
+// Handle negative day and month overflow (less common)
+if (day < 1) {
+  day = 31; // Assuming 31 days in previous month (adjust if needed)
+  month -= 1;
+}
+
+	
+	//convert to PST or PDT
+	
+	
+
+// Use conditional statements for single-digit formatting
+const monthString = month < 10 ? '0' + month : month;
+const dayString = day < 10 ? '0' + day : day;
+
+const dateLabel = year + '/' + monthString + '/' + dayString;
+
+
+// Use conditional statements for single-digit formatting
+const hoursString = hours < 10 ? '0' + hours : hours;
+const minutesString = minutes < 10 ? '0' + minutes : minutes;
+const secondsString = seconds < 10 ? '0' + seconds : seconds;
+
+const startTimeLabel = dateLabel + ' ' + hoursString + ':' + minutesString + ':00' ;
+
+
+const startTimeStamp = Math.floor(today.getTime() / 1000); // Get timestamp in seconds
+	if (button.name == "Diaper")
+	{
+	if (obj.isSingleClick)
+	{
+		send_val = 65536 //pee
+ 	}
+	else if (obj.isDoubleClick)
+	{
+		send_val = 1 //poo
+	}
+	else if (obj.isHold)
+	{
+		send_val = 65537 //mixed
+	}
+		var dataString = JSON.stringify({
+      "items": [
+        {
+          "babies": [
+            {
+              "baby_id": 3107474,
+              "BabyData": {
+                "create": [
+                  {
+                    "uuid": guid(),
+                    "baby_id": 3107474,
+                    "action_user_id": 72057594060131384,
+                    "key": "diaper",
+  									"date_label": dateLabel,
+  									"start_time_label": startTimeLabel,
+  									"start_timestamp": startTimeStamp,
+                    "val_int": send_val,
+                    "val_text": ""
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    })
+		pushData(dataString)
+	}
+	else if (button.name == "Feed"){
+			if (obj.isSingleClick)
+	{
+		feed = 3 //BM
+ 	}
+	else if (obj.isDoubleClick)
+	{
+		feed = 4 //Formula
+	}
+	else if (obj.isHold)
+	{
+		return
+	}
+		var dataString = JSON.stringify({
+			      "items": [
+        {
+          "babies": [
+            {
+              "baby_id": 3107474,
+              "BabyFeedData": {
+                "create": [{
+  "baby_id": 3107474,
+  "action_user_id": 72057594060131384,
+  "uuid": guid(),
+  									"date_label": dateLabel,
+  									"start_time_label": startTimeLabel,
+  									"start_timestamp": startTimeStamp,
+  "feed_type": feed,
+  "bottle_ml": 5,
+  "notes": ""
+     }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    })
+			pushData(dataString)
+	}
+	//pushData(65536)
+	
+});
+
+console.log("Started");

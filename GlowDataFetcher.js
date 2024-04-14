@@ -77,6 +77,14 @@ class GlowDataFetcher {
     });
   }
 
+  pushData(value) {
+
+    this.fetchLoginToken(login_token => {
+      GlowRawAPI.pushBabyData(
+        login_token,value)
+    });
+  }
+
   fetchLatestSleepEntry(callback) {
     this.fetchSyncData(data => callback(data.last_sleep_time));
   }
